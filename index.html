@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
+		<title></title>
+		<style type="text/css">
+			body {
+				font-family: 'Roboto';
+			}
+			td{
+				background-color: #F5D7BF;
+				padding: 10px;
+				border: 2px solid #ECE9E0;
+			}
+			table{
+				background-color: #ECE9E0;
+				padding: 20px;
+				color:  #656665;
+				border-radius: 20px;
+				flex-shrink: 0;
+			}
+			th{
+				padding: 7px;
+				text-align: left;
+			}
+			caption{
+				margin: 15px;
+				font-weight: bold;
+				color:  #656665;
+			}
+			.button{
+				background-color:rgb(104 207 3);
+				border:0;
+				margin:0 auto;
+				display:flex;
+				justify-content:center;
+				align-items:center;
+				height:30px;
+				width:30px;
+			}
+			input{
+				border-width: 0px;
+				outline: none;
+				width: 150px;
+			}
+			select{
+				border-width: 0px;
+				outline: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+		<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+		<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+		<script type="text/babel">
+			'use strict';
+
+			class App extends React.Component {
+				state = {
+					workers:[
+						{
+							name: "John",
+							lastName: "Smith",
+							department: "IT",
+							salaryAmount: 3000,
+							salaryCurrency: "USD",
+							id: 1,
+						},
+						{
+							name: "Jane",
+							lastName: "Doe",
+							department: "IT",
+							salaryAmount: 3000.5,
+							salaryCurrency: "USD",
+							id: 2,
+						},
+						{
+							name: "Bob",
+							lastName: "Colman",
+							department: "Sales",
+							salaryAmount: 9000,
+							salaryCurrency: "USD",
+							id: 3,
+
+						},
+						{
+							name: "Barbara",
+							lastName: "O'Connor",
+							department: "Sales",
+							salaryAmount: 4000,
+							salaryCurrency: "USD",
+							id: 4,
+						},
+						{
+							name: "Adam",
+							lastName: "Murphy",
+							department: "Administration",
+							salaryAmount: 2000,
+							salaryCurrency: "USD",
+							id: 5,
+						},
+					],
+					id:6,
+					name: "",
+					lastName: "",
+					department: "",
+					salaryAmount: "",
+					salaryCurrency: "USD",
+					summaryCurrency: "USD",
+					summaryDepartment: "All",
+					nameSort:"",
+					lastNameSort:"",
+					departmentSort:"",
+					salarySortFrom:"",
+					salarySortTo:"",
+					salarySortCurrency:"All",
+				};
+
+				deleteWorker(id){
+					let workers = this.state.workers.filter((item)=> item.id !== id);
+					this.setState({workers:workers})
+				}
+
+				onChangeText(e){
+					let { name, value } = e.target;
+					this.setState({[name]:value});
+				}
+
+				onChangeSalaryAmount(e){
+					const { value, name } = e.target;
+					if(isNaN( Number(value) )) return;
+					this.setState({[name]: value});
+				}
+				addWorker(){
+					const { name, lastName, department, salaryAmount, salaryCurrency,id } = this.state;
+					if( !name.trim() || !lastName.trim() || !department || !salaryAmount || !salaryCurrency){
+						alert("To add worker need fill all fields");
+						return;
+					}
+					const workers = this.state.workers.slice();
+					const worker = {
+						id,
+						salaryCurrency,
+						salaryAmount: +salaryAmount,
+						department: department.replace(/\s+/g, ''),
+						name: name.replace(/\s+/g, ''),
+						lastName: name.replace(/\s+/g, ''),
+						
+					}
+					workers.push(worker);
+					this.setState({
+						id: id + 1,
+						workers,
+						name: "",
+						lastName:"",
+						department:"",
+						salaryAmount:"",
+					})
+				}
+
+				render() {
+					const { workers, summaryDepartment, summaryCurrency, nameSort, lastNameSort, departmentSort, salarySortFrom, salarySortTo, salarySortCurrency} = this.state;
+
+					const departmentsCopy = workers.map((item) => item.department)
+					const sortedDepartments = [];
+
+					departmentsCopy.forEach((item)=>{
+						for(let i = 0; i<sortedDepartments.length; i++){
+							if(sortedDepartments[i].toLowerCase() === item.toLowerCase()) return;
+						}
+						sortedDepartments.push(item)
+					});
+					
+					const summarySortedWorkers = workers.filter((item) =>{
+						if(summaryDepartment === "All") return item.salaryCurrency === summaryCurrency;
+						return item.salaryCurrency === summaryCurrency && item.department.toLowerCase() === summaryDepartment.toLowerCase();
+					});
+
+					const summary = summarySortedWorkers.reduce((prValue,item)=>prValue + Number(item.salaryAmount),0);
+
+					const uniqueNames = Array.from(new Set(workers.map(item => item.name)));
+					const uniqueLastNames = Array.from(new Set(workers.map(item => item.lastName)));
+
+					const sortedWorkers = sortWorkers(workers, nameSort, lastNameSort, departmentSort, salarySortFrom, salarySortTo, salarySortCurrency);
+
+					return (
+						<div style={{display:"flex",width:"fit-content",margin:"0 auto"}}>
+							<table>
+								<caption>Workers</caption>
+								<tbody>
+									<tr>
+										<th>№</th>
+										<th>Name</th>
+										<th>Last name</th>
+										<th>Deparment</th>
+										<th>Salary</th>
+									</tr>
+									{sortedWorkers.map((item,index)=>
+										(<tr key={index}>
+											<td>{index+1}</td>
+											<td>{item.name}</td>
+											<td>{item.lastName}</td>
+											<td>{item.department}</td>
+											<td>{`${item.salaryAmount} ${item.salaryCurrency}`}</td>
+											<td>
+												<button onClick={()=>{this.deleteWorker(item.id)}} className="button" style={{backgroundColor:"red"}}>
+													<div style={{width:"2px",height:"15px",backgroundColor:"white",marginRight:"-2px",transform: "rotate(-45deg)"}}></div>
+													<div style={{width:"2px",height:"15px",backgroundColor:"white",transform: "rotate(45deg)"}}></div>
+												</button>
+											</td>
+										</tr>))
+									}
+									<tr>
+										<td colSpan="3"></td>
+										<td>
+											<div>Summary</div> 
+											<div style={{margin:"10px 0 10px 0"}}>
+												Deparment
+												<select style={{marginLeft:"10px"}} name="summaryDepartment" onChange={(e)=> this.onChangeText(e)}>
+													<option>All</option>
+													{sortedDepartments.map((item,index)=>{
+														return(
+															<option key={index}>{item}</option>
+														)
+													})}
+												</select>
+											</div>
+											<div>
+												Currency
+												<select style={{marginLeft:"10px"}} name="summaryCurrency" onChange={(e) => this.onChangeText(e)}>
+													<option>USD</option>
+													<option>PL</option>
+													<option>Euro</option>
+													<option>GBP</option>
+													<option>CHF</option>
+													<option>JPY</option>
+												</select>
+											</div>
+										</td>
+										<td>{summary} {this.state.summaryCurrency}</td>
+									</tr>
+									<tr>
+										<td></td>
+										<td><input value={this.state.name} name="name" onChange={(e)=> this.onChangeText(e)}/></td>
+										<td><input value={this.state.lastName} name="lastName" onChange={(e)=> this.onChangeText(e)}/></td>
+										<td><input value={this.state.department} name="department" onChange={(e)=> this.onChangeText(e)}/></td>
+										<td>
+											<input value={this.state.salaryAmount} name="salaryAmount" onChange={(e)=> this.onChangeSalaryAmount(e)} style={{width:"75px"}}/>
+											<select value={this.state.salaryCurrency} name="salaryCurrency" onChange={(e)=> this.onChangeText(e)}>
+												<option>USD</option>
+												<option>PL</option>
+												<option>Euro</option>
+												<option>GBP</option>
+												<option>CHF</option>
+												<option>JPY</option>
+											</select>
+										</td>
+										<td>
+											<button onClick={()=>this.addWorker()} className="button">
+												<div style={{width:"2px",height:"15px",backgroundColor:"white",marginRight:"-2px"}}></div>
+												<div style={{width:"2px",height:"15px",backgroundColor:"white",transform: "rotate(90deg)"}}></div>
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<div style={{backgroundColor:"#ECE9E0",flexShrink:"0",padding:"20px",margin:"49px 0 0 20px",borderRadius:"20px",alignSelf: "flex-start",color:"#656665"}}>
+								<div style={{backgroundColor:"#F5D7BF",padding:"20px",display:"flex",justifyContent:"space-between"}}>
+									<div>Name</div>
+									<div>
+										<input name="nameSort" list="name-sort" value={this.state.nameSort} onChange={(e)=> this.onChangeText(e)} style={{width:"103px"}}/>
+										<datalist id="name-sort">
+											{uniqueNames.map((item,index)=><option value={item} key={index}/>)}
+										</datalist>
+									</div>
+								</div>
+								<div style={{display:"flex",backgroundColor:"#F5D7BF",padding:"20px",margin:"20px 0 20px 0",justifyContent:"space-between"}}>
+									<div>Last name</div>
+									<div>
+										<input name="lastNameSort" list="last-name-sort" value={this.state.lastNameSort} onChange={(e)=> this.onChangeText(e)} style={{width:"103px"}}/>
+										<datalist id="last-name-sort">
+											{uniqueLastNames.map((item,index)=><option value={item} key={index}/>)}
+										</datalist>
+									</div>
+								</div>
+								<div style={{display:"flex",justifyContent:"space-between",backgroundColor:"#F5D7BF",padding:"20px"}}> 
+									Deparment
+									<select name="departmentSort" value={this.state.departmentSort} onChange={(e)=> this.onChangeText(e)}>
+										<option>All</option>
+										{sortedDepartments.map((item,index)=>
+										<option key={index}>
+											{item}
+										</option>)}
+									</select>
+								</div>
+								<div style={{display:"flex",justifyContent:"space-between",backgroundColor:"#F5D7BF",padding:"20px",marginTop:"20px",alignItems:"center"}}>
+									<div style={{marginRight:"20px"}}>Salary</div>
+									<input style={{width:"75px",padding:"5px"}} placeholder="From" name="salarySortFrom" value={this.state.salarySortFrom} onChange={(e) => this.onChangeSalaryAmount(e)}/>
+									<input style={{width:"75px",padding:"5px"}} placeholder="To" name="salarySortTo" value={this.state.salarySortTo} onChange={(e) => this.onChangeSalaryAmount(e)}/>
+									<select value={this.state.salarySortCurrency} name="salarySortCurrency" onChange={(e)=> this.onChangeText(e)} style={{padding:"4px"}}>
+										<option>All</option>
+										<option>USD</option>
+										<option>PL</option>
+										<option>Euro</option>
+										<option>GBP</option>
+										<option>CHF</option>
+										<option>JPY</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					);
+				}
+			}
+			const domContainer = document.querySelector('#root');
+			ReactDOM.render(<App/>, domContainer);
+
+			function sortWorkers(workers,name,lastName,department,salaryFrom,salaryTo,salaryCurrency){
+				let copyWorkers = workers.slice();
+
+				if(name.trim() !== ""){
+					copyWorkers = copyWorkers.filter((item)=> item.name.toLowerCase().startsWith(name.toLowerCase()));
+				}
+				if(lastName.trim() !== ""){
+					copyWorkers = copyWorkers.filter((item)=> item.lastName.toLowerCase().startsWith(lastName.toLowerCase()));
+				}
+				if(department !== "" &&  department !== "All"){
+					copyWorkers = copyWorkers.filter((item)=> item.department.toLowerCase() === department.toLowerCase());
+				}
+				if(salaryCurrency !== "All"){
+					copyWorkers = copyWorkers.filter((item)=> item.salaryCurrency === salaryCurrency);
+				}
+				if(salaryFrom !== ""){
+					copyWorkers = copyWorkers.filter((item)=> item.salaryAmount >= +salaryFrom);
+				}
+				if(salaryTo !== ""){
+					copyWorkers = copyWorkers.filter((item)=> item.salaryAmount <= +salaryTo);
+				}
+				return copyWorkers;
+			}
+		</script>
+	</body>
+</html>
